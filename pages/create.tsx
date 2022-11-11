@@ -11,6 +11,7 @@ import {
 import { NATIVE_TOKENS, NATIVE_TOKEN_ADDRESS, NFT } from "@thirdweb-dev/sdk";
 import { useRouter } from "next/router";
 import React, { FormEvent, useState } from "react";
+import toast from "react-hot-toast";
 import Header from "../components/Header";
 import network from "../utils/network";
 
@@ -72,6 +73,7 @@ function Create({}: Props) {
         },
         {
           onSuccess(data, variables, context) {
+            toast.success("Direct Listed successfully!");
             console.log("SUCCESS", data, variables, context);
             router.push("/");
           },
@@ -97,6 +99,7 @@ function Create({}: Props) {
         },
         {
           onSuccess(data, variables, context) {
+            toast.success("Auction Listed successfully!");
             console.log("SUCCESS", data, variables, context);
             router.push("/");
           },
