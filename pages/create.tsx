@@ -11,7 +11,7 @@ import {
 import { NATIVE_TOKENS, NATIVE_TOKEN_ADDRESS, NFT } from "@thirdweb-dev/sdk";
 import { useRouter } from "next/router";
 import React, { FormEvent, useState } from "react";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import Header from "../components/Header";
 import network from "../utils/network";
 
@@ -23,6 +23,7 @@ function Create({}: Props) {
   const networkMismatch = useNetworkMismatch();
   const [, switchNetwork] = useNetwork();
   const [selectedNft, setSelectedNft] = useState<NFT>();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const { contract } = useContract(
     process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT,
@@ -46,6 +47,8 @@ function Create({}: Props) {
   } = useCreateAuctionListing(contract);
 
   const handleCreateListing = async (e: FormEvent<HTMLFormElement>) => {
+    setIsLoading(true);
+    toast.loading("Loading...");
     e.preventDefault();
 
     if (networkMismatch) {
@@ -75,11 +78,14 @@ function Create({}: Props) {
           onSuccess(data, variables, context) {
             toast.success("Direct Listed successfully!");
             console.log("SUCCESS", data, variables, context);
+            setIsLoading(false);
             router.push("/");
           },
           onError(error, variables, context) {
             {
               console.log("ERROR", error, variables, context);
+              toast.error("Error on Listing!");
+              setIsLoading(false);
             }
           },
         }
@@ -101,11 +107,14 @@ function Create({}: Props) {
           onSuccess(data, variables, context) {
             toast.success("Auction Listed successfully!");
             console.log("SUCCESS", data, variables, context);
+            setIsLoading(false);
             router.push("/");
           },
           onError(error, variables, context) {
             {
               console.log("ERROR", error, variables, context);
+              toast.error("Error on Listing!");
+              setIsLoading(false);
             }
           },
         }
@@ -177,17 +186,19 @@ function Create({}: Props) {
                   placeholder="0.05"
                 />
               </div>
-
-              <button
-                type="submit"
-                className="bg-blue-600 text-white rounded-lg p-4 mt-8"
-              >
-                Create Listing
-              </button>
+              {!isLoading && (
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white rounded-lg p-4 mt-8"
+                >
+                  Create Listing
+                </button>
+              )}
             </div>
           </form>
         )}
       </main>
+      <Toaster />
     </div>
   );
 }

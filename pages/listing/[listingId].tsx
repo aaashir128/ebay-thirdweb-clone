@@ -24,6 +24,7 @@ import toast, { Toaster } from "react-hot-toast";
 type Props = {};
 
 function listingId({}: Props) {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [bidAmout, setBidAmount] = useState("");
   const [, switchNetwork] = useNetwork();
   const networkMismatch = useNetworkMismatch();
@@ -46,7 +47,11 @@ function listingId({}: Props) {
 
   const { mutate: acceptOffer } = useAcceptDirectListingOffer(contract);
 
-  const { data: listing, isLoading, error } = useListing(contract, listingId);
+  const {
+    data: listing,
+    isLoading: listLoading,
+    error,
+  } = useListing(contract, listingId);
 
   useEffect(() => {
     if (!contract || !listingId || !listing) return;
@@ -88,17 +93,23 @@ function listingId({}: Props) {
         onSuccess(data, variables, context) {
           toast.success("Successfully Bought NFT");
           console.log("Success", data);
+          setIsLoading(false);
+
           router.replace("/");
         },
         onError(error, variables, context) {
           console.log("Error", error);
           toast.error("This is an error!");
+          setIsLoading(false);
         },
       }
     );
   };
 
   const createBidOrOffer = async () => {
+    setIsLoading(true);
+    // toast.loading("Loading...");
+
     try {
       if (networkMismatch) {
         switchNetwork && switchNetwork(network);
@@ -128,11 +139,14 @@ function listingId({}: Props) {
               toast.success("Offer made successfully!");
 
               console.log("Success", data);
+              setIsLoading(false);
+
               setBidAmount("");
             },
             onError(error, variables, context) {
               toast.error("This is an error!");
               console.log("Error: OFfer could not be made", error);
+              setIsLoading(false);
             },
           }
         );
@@ -148,17 +162,22 @@ function listingId({}: Props) {
               toast.success("Bid made successfully!");
 
               console.log("Success", data);
+              setIsLoading(false);
+
               setBidAmount("");
             },
             onError(error, variables, context) {
               toast.error("This is an error!");
               console.log("Error", error);
+              setIsLoading(false);
             },
           }
         );
       }
     } catch (error) {
       console.error(error);
+      toast.error("Error!");
+      setIsLoading(false);
     }
   };
 
@@ -174,7 +193,7 @@ function listingId({}: Props) {
     }
   };
 
-  if (isLoading) {
+  if (listLoading) {
     return (
       <div>
         <Header />
@@ -192,6 +211,11 @@ function listingId({}: Props) {
       </div>
     );
   }
+
+  // if (isLoading) {
+  //   toast.loading("Loading...");
+  // }
+
   return (
     <div>
       <Header />
@@ -223,12 +247,14 @@ function listingId({}: Props) {
               {listing.buyoutCurrencyValuePerToken.displayValue}{" "}
               {listing.buyoutCurrencyValuePerToken.symbol}
             </p>
-            <button
-              className="col-start-2 mt-2 bg-blue-600 font-bold text-white rounded-full w-44 py-4 px-10"
-              onClick={buyNft}
-            >
-              Buy Now
-            </button>
+            {!isLoading && (
+              <button
+                className="col-start-2 mt-2 bg-blue-600 font-bold text-white rounded-full w-44 py-4 px-10"
+                onClick={buyNft}
+              >
+                Buy Now
+              </button>
+            )}
           </div>
 
           {listing.type === ListingType.Direct && offers && (
@@ -259,34 +285,40 @@ function listingId({}: Props) {
                     </p>
 
                     {listing.sellerAddress === address && (
-                      <button
-                        className="p-2 w-32 bg-red-500/50 rounded-lg font-bold text-xs cursor-pointer"
-                        onClick={() =>
-                          acceptOffer(
-                            {
-                              addressOfOfferor: offer.offeror,
-                              listingId,
-                            },
-                            {
-                              onSuccess(data, variables, context) {
-                                toast.success("Offer accepted successfully!");
+                      <>
+                        {!isLoading && (
+                          <button
+                            className="p-2 w-32 bg-red-500/50 rounded-lg font-bold text-xs cursor-pointer"
+                            onClick={() =>
+                              acceptOffer(
+                                {
+                                  addressOfOfferor: offer.offeror,
+                                  listingId,
+                                },
+                                {
+                                  onSuccess(data, variables, context) {
+                                    toast.success(
+                                      "Offer accepted successfully!"
+                                    );
 
-                                console.log("Success", data);
-                                router.replace("/");
-                              },
-                              onError(error, variables, context) {
-                                toast.error("This is an error!");
-                                console.log(
-                                  "Error: OFfer could not be made",
-                                  error
-                                );
-                              },
+                                    console.log("Success", data);
+                                    router.replace("/");
+                                  },
+                                  onError(error, variables, context) {
+                                    toast.error("This is an error!");
+                                    console.log(
+                                      "Error: OFfer could not be made",
+                                      error
+                                    );
+                                  },
+                                }
+                              )
                             }
-                          )
-                        }
-                      >
-                        Accept Offer
-                      </button>
+                          >
+                            Accept Offer
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </>
@@ -326,15 +358,18 @@ function listingId({}: Props) {
               placeholder={formatePlaceholder()}
               onChange={(e) => setBidAmount(e.target.value)}
             />
-            <button
-              onClick={createBidOrOffer}
-              className="bg-red-600 text-white font-bold rounded-full w-44 py-4 px-10"
-            >
-              {listing.type === ListingType.Direct ? "Offer" : "Bid"}
-            </button>
+            {!isLoading && (
+              <button
+                onClick={createBidOrOffer}
+                className="bg-red-600 text-white font-bold rounded-full w-44 py-4 px-10"
+              >
+                {listing.type === ListingType.Direct ? "Offer" : "Bid"}
+              </button>
+            )}
           </div>
         </section>
       </main>
+      <Toaster />
     </div>
   );
 }

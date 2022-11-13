@@ -1,6 +1,7 @@
 import { useAddress, useContract } from "@thirdweb-dev/react";
 import { useRouter } from "next/router";
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useLayoutEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import Header from "../components/Header";
 
 type Props = {};
@@ -9,6 +10,7 @@ function addItem({}: Props) {
   const address = useAddress();
   const [preview, setPreivew] = useState<string>();
   const [image, setImage] = useState<File>();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
 
   const { contract } = useContract(
@@ -19,13 +21,17 @@ function addItem({}: Props) {
   console.log(contract);
 
   const mintNFT = async (e: FormEvent<HTMLFormElement>) => {
+    setIsLoading(true);
     e.preventDefault();
     if (!contract || !address) return;
 
     if (!image) {
-      alert("Please select an image");
+      // alert("Please select an image");
+      toast.error("Please select an image");
+      console.log("Please select an image");
       return;
     }
+    toast.loading("Loading...");
     const target = e.target as typeof e.target & {
       name: { value: string };
       description: { value: string };
@@ -45,8 +51,10 @@ function addItem({}: Props) {
 
       console.log(reciept, tokenId, nft);
       router.push("/");
+      setIsLoading(false);
     } catch (error) {
       console.log(error);
+      setIsLoading(false);
     }
   };
 
@@ -102,13 +110,16 @@ function addItem({}: Props) {
               }}
             />
 
-            <button
-              type="submit"
-              className="bg-blue-600 font-bold text-white rounded-full py-4 px-10 w-56  md:mt-auto mx-auto mt-5 md:ml-auto"
-            >
-              Add/Mint Item
-            </button>
+            {!isLoading && (
+              <button
+                type="submit"
+                className="bg-blue-600 font-bold text-white rounded-full py-4 px-10 w-56  md:mt-auto mx-auto mt-5 md:ml-auto"
+              >
+                Add/Mint Item
+              </button>
+            )}
           </form>
+          <Toaster />
         </div>
       </main>
     </div>
